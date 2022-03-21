@@ -1,0 +1,54 @@
+service: my-service-name
+
+custom:
+  stage: '${opt:stage, self:provider.stage}'
+
+  localstack:
+    stages: [local]
+    host: http://localhost  # optional - LocalStack host to connect to
+    edgePort: 4566  # optional - LocalStack edge port to connect to
+    autostart: false  # optional - Start LocalStack in Docker on Serverless deploy
+    lambda:
+      # Enable this flag to improve performance
+      mountCode: True
+    docker:
+      # Enable this flag to run "docker ..." commands as sudo
+      sudo: False
+
+provider:
+  name: aws
+  stage: '${opt:stage, self:provider.stage}'
+  runtime: nodejs14.x
+  region: us-west-2
+  memorySize: 512
+  versionFunctions: false
+  deploymentBucket:
+    blockPublicAccess: true # Prevents public access via ACLs or bucket policies. Default is false
+    name: ${env:SERVERLESS_DEPLOYMENT_BUCKET}
+    maxPreviousDeploymentArtifacts: 30 # On every deployment the framework prunes the bucket to remove artifacts older than this limit. The default is 5
+    tags: # Tags that will be added to each of the deployment resources
+      service: my-service
+      team: backend
+# vpc:
+#   securityGroupIds:
+#     - goup
+#   subnetIds:
+#     - subnet-1
+#     - subnet-2
+#     - subnet-3
+  environment:
+    env: ${self:custom.stage}
+    DEBUG: ${env:DEBUG, '*'}
+
+# you can add packaging information here
+package:
+  individually: true
+  exclude:
+    - 'coverage/**'
+    - 'Makefile'
+    - 'README.md'
+
+functions:
+  my-service:
+    handler: build/index.handler
+    timeout: 30
